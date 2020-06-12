@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <math.h>
 
 using namespace std;
 
@@ -17,6 +16,8 @@ vector<coord> smallBoards;
 int compareBoards(coord* b1, coord* b2);
 int getErrorHor(coord* b1, coord* b2);
 int getErrorVer(coord* b1, coord* b2);
+int getBoardWidth(coord* coord);
+int getBoardHeight(coord* coord);
 
 vector<coord> readBoards() {
     ifstream file("maleplyty.txt");
@@ -40,14 +41,13 @@ vector<coord> readOutput() {
     int number = 0;
     bool rotation;
     file >> surface;
-//    file >> x;
-//    file >> y;
     while (file >> x && file >> y){
         file >> x;
         file >> y;
         file >> rotation;
         coord coord = {x, y, rotation, number};
         coords.push_back(coord);
+        number++;
     }
     return coords;
 }
@@ -61,21 +61,19 @@ void overlapCheck() {
 
 // TODO przerobic ta metode zeby jeszcze pole zwracalo z tego co nachodzi/wychodzi zle
 int compareBoards(coord* b1, coord* b2) {
-    // todo if rotation, then swap height and width for check (probably create new structure)
-    smallBoards[0] = {500, 500};
-    smallBoards[1] = {400, 50};
-    b1 = new coord{0, 0, 0, 0};
-    b2 = new coord{300, 200, 0, 1};
+//    smallBoards[0] = {1400, 500};
+//    smallBoards[1] = {900, 900};
+//    b1 = new coord{-1, -1, 0, 0};
+//    b2 = new coord{0, 0, 0, 1};
     int errorHor = getErrorHor(b1, b2);
     int errorVer = getErrorVer(b1, b2);
 
     cout << "Hor: " << errorHor << endl;
     cout << "Ver: " << errorVer << endl;
-    return false;
+    return errorHor * errorVer;
 }
 
 int getErrorHor(coord* b1, coord* b2) {
-    // todo if rotation, then swap height and width for check (probably create new structure)
     coord* boardL;
     coord* boardR;
     if (b1->x <= b2->x) {
@@ -86,19 +84,18 @@ int getErrorHor(coord* b1, coord* b2) {
         boardR = b1;
     }
 
-    int leftBoardEnd = boardL->x + smallBoards[boardL->number].x;
+    int leftBoardEnd = boardL->x + getBoardWidth(boardL);
     int rightBoardStart = boardR->x;
 
     int errorHor = 0;
     int maxError = leftBoardEnd - rightBoardStart;
     if (leftBoardEnd > rightBoardStart) {
-        errorHor = min(smallBoards[boardR->number].x, maxError);
+        errorHor = min(getBoardWidth(boardR), maxError);
     }
     return errorHor;
 }
 
 int getErrorVer(coord* b1, coord* b2) {
-    // todo if rotation, then swap height and width for check (probably create new structure)
     coord* boardTop;
     coord* boardBot;
     if (b1->y <= b2->y) {
@@ -109,15 +106,31 @@ int getErrorVer(coord* b1, coord* b2) {
         boardBot = b1;
     }
 
-    int topBoardEnd = boardTop->y + smallBoards[boardTop->number].y;
+    int topBoardEnd = boardTop->y + getBoardHeight(boardTop);
     int botBoardStart = boardBot->y;
 
     int errorVec = 0;
     int maxError = topBoardEnd - botBoardStart;
     if (topBoardEnd > botBoardStart) {
-        errorVec = min(smallBoards[boardBot->number].y, maxError);
+        errorVec = min(getBoardHeight(boardBot), maxError);
     }
     return errorVec;
+}
+
+int getBoardWidth(coord* coord) {
+    if (coord->rotation == 0) {
+        return smallBoards[coord->number].x;
+    } else {
+        return smallBoards[coord->number].y;
+    }
+}
+
+int getBoardHeight(coord* coord) {
+    if (coord->rotation == 0) {
+        return smallBoards[coord->number].y;
+    } else {
+        return smallBoards[coord->number].x;
+    }
 }
 
 int main() {
