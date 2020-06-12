@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Users/Comarch/Desktop/studia/genetyczne/projekt/Cutting/main.cpp
+iostream
+-
+fstream
+-
+vector
+-
+math.h
+-
+
