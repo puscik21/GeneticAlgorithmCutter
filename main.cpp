@@ -11,6 +11,8 @@ struct coord {
     int number;
 };
 
+const int BOARD_WIDTH = 2800;
+const int BOARD_HEIGHT = 2070;
 vector<coord> smallBoards;
 
 int compareBoards(coord* b1, coord* b2);
@@ -18,6 +20,7 @@ int getErrorHor(coord* b1, coord* b2);
 int getErrorVer(coord* b1, coord* b2);
 int getBoardWidth(coord* coord);
 int getBoardHeight(coord* coord);
+int calculateExceededSurface(coord* coord);
 
 vector<coord> readBoards() {
     ifstream file("maleplyty.txt");
@@ -52,24 +55,20 @@ vector<coord> readOutput() {
     return coords;
 }
 
-void overlapCheck() {
+int getOverlapError() {
     vector<coord> positions = readOutput();
-//    cout << "(" << smallBoards[0].x << ", " << smallBoards[0].y << ") - " << positions[0].x << ", " << positions[0].y << endl;
-//    cout << "(" << smallBoards[1].x << ", " << smallBoards[1].y << ") - " << positions[1].x << ", " << positions[1].y << endl;
-    cout << compareBoards(&positions[0], &positions[1]) << endl;
+    long overlapSum = 0;
+    for (int i = 0; i < smallBoards.size() - 1; i++) {
+        for (int j = i + 1; j < smallBoards.size(); j++) {
+            overlapSum += compareBoards(&positions[i], &positions[j]);
+        }
+    }
+    return overlapSum;
 }
 
-// TODO przerobic ta metode zeby jeszcze pole zwracalo z tego co nachodzi/wychodzi zle
 int compareBoards(coord* b1, coord* b2) {
-//    smallBoards[0] = {1400, 500};
-//    smallBoards[1] = {900, 900};
-//    b1 = new coord{-1, -1, 0, 0};
-//    b2 = new coord{0, 0, 0, 1};
     int errorHor = getErrorHor(b1, b2);
     int errorVer = getErrorVer(b1, b2);
-
-    cout << "Hor: " << errorHor << endl;
-    cout << "Ver: " << errorVer << endl;
     return errorHor * errorVer;
 }
 
@@ -117,6 +116,31 @@ int getErrorVer(coord* b1, coord* b2) {
     return errorVec;
 }
 
+int getExceedError() {
+    vector<coord> positions = readOutput();
+    long errorSum = 0;
+    for (int i = 0; i < smallBoards.size() - 1; i++) {
+        errorSum += calculateExceededSurface(&positions[i]);
+    }
+    return errorSum;
+}
+
+int calculateExceededSurface(coord* coord) {
+    int sBoardWidth;
+    int sBoardWHeight;
+    if (coord->rotation == 0) {
+        sBoardWidth = smallBoards[coord->number].x;
+        sBoardWHeight = smallBoards[coord->number].y;
+    } else {
+        sBoardWidth = smallBoards[coord->number].y;
+        sBoardWHeight = smallBoards[coord->number].x;
+    }
+
+    int errorRight = max(coord->x + sBoardWidth - BOARD_WIDTH, 0);
+    int errorBot = max(coord->y + sBoardWHeight - BOARD_HEIGHT, 0);
+    return errorRight * sBoardWHeight + errorBot * sBoardWidth - errorRight * errorBot;
+}
+
 int getBoardWidth(coord* coord) {
     if (coord->rotation == 0) {
         return smallBoards[coord->number].x;
@@ -136,6 +160,7 @@ int getBoardHeight(coord* coord) {
 int main() {
     std::cout << "Hello, World!" << std::endl;
     readBoards();
-    overlapCheck();
+    cout << "overlapSum: " << getOverlapError() << endl;
+    cout << "exceedSum: " << getExceedError() << endl;
     return 0;
 }
