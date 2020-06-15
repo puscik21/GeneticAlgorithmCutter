@@ -2,6 +2,21 @@
 #include <fstream>
 #include <vector>
 
+#include <ga/ga.h>
+#include <ga/std_stream.h>
+//#define INSTANTIATE_REAL_GENOME
+#include <ga/GARealGenome.h>
+#include <ga/GAList.C>
+#include <ga/GAListGenome.C>
+#include <math.h>
+#include <ga/GASStateGA.h>
+#include <ga/GAListGenome.h>
+#include <ga/garandom.h>
+
+
+#define cout STD_COUT
+#define ostream STD_OSTREAM
+
 using namespace std;
 
 struct coord {
@@ -11,25 +26,35 @@ struct coord {
     int number;
 };
 
+float Objective(GAGenome &);
+int Mutator(GAGenome&, float);
+
 const int BOARD_WIDTH = 2800;
 const int BOARD_HEIGHT = 2070;
+int populationCount = 0;
 vector<coord> smallBoards;
-
 int compareBoards(coord* b1, coord* b2);
 int getErrorHor(coord* b1, coord* b2);
 int getErrorVer(coord* b1, coord* b2);
 int getBoardWidth(coord* coord);
 int getBoardHeight(coord* coord);
 int calculateExceededSurface(coord* coord);
+long calculateWholeSurface(vector<coord> positions);
+long getBoardSurface (coord* board);
+int findExcludedBoard(GARealGenome& genome);
+void findNewPositionForBoard(GARealGenome& genome, int number);
+long getGenomeSurface(GAGenome& g);
 
 vector<coord> readBoards() {
     ifstream file("maleplyty.txt");
+    cout << "File is good? " << file.good() << endl;
     int width;
     int height;
     while (file >> width && file >> height ){
         coord smallBoard = {width, height};
         smallBoards.push_back(smallBoard);
     }
+    ::smallBoards = smallBoards;
     return smallBoards;
 }
 
@@ -66,7 +91,21 @@ int getOverlapError() {
     return overlapSum;
 }
 
+int getOverlapError(vector<coord> positions) {
+    long overlapSum = 0;
+    for (int i = 0; i < smallBoards.size() - 1; i++) {
+        for (int j = i + 1; j < smallBoards.size(); j++) {
+            overlapSum += compareBoards(&positions[i], &positions[j]);
+        }
+    }
+    return overlapSum;
+}
+
 int compareBoards(coord* b1, coord* b2) {
+    if (b1->x == -1 || b1->y == -1 || b2->x == -1 || b2->y == -1) {
+        return 0;
+    }
+
     int errorHor = getErrorHor(b1, b2);
     int errorVer = getErrorVer(b1, b2);
     return errorHor * errorVer;
@@ -125,7 +164,19 @@ int getExceedError() {
     return errorSum;
 }
 
+int getExceedError(vector<coord> positions) {
+    long errorSum = 0;
+    for (int i = 0; i < smallBoards.size(); i++) {
+        errorSum += calculateExceededSurface(&positions[i]);
+    }
+    return errorSum;
+}
+
 int calculateExceededSurface(coord* coord) {
+    if (coord->x == -1 || coord->y == -1) {
+        return 0;
+    }
+
     int sBoardWidth;
     int sBoardWHeight;
     if (coord->rotation == 0) {
@@ -157,10 +208,165 @@ int getBoardHeight(coord* coord) {
     }
 }
 
-int main() {
-    std::cout << "Hello, World!" << std::endl;
+long calculateWholeSurface(vector<coord> positions) {
+    long surface = 0;
+    for (int i = 0; i < positions.size(); i++) {
+        surface += getBoardSurface(&positions[i]);
+    }
+    return surface;
+}
+
+long getBoardSurface (coord* board) {
+    if (board->x == -1 || board->y == -1) {
+        return 0;
+    }
+    return smallBoards[board->number].x * smallBoards[board->number].y;
+}
+
+int main(int argc, char *argv[]) {
+    unsigned int seed = 0;
+    for(int ii=1; ii<argc; ii++) {
+        if(strcmp(argv[ii++],"seed") == 0) {
+            seed = atoi(argv[ii]);
+        }
+    }
+
     readBoards();
-    cout << "overlapSum: " << getOverlapError() << endl;
-    cout << "exceedSum: " << getExceedError() << endl;
+    int length = smallBoards.size() * 2;
+    GARealAlleleSet alleles1;
+
+for (int i = -1; i < 2800; i++) {
+    alleles1.add(i);
+}
+    GARealGenome genome1(length, alleles1, Objective);
+//    genome1.crossover(GARealGenome::OnePointCrossover);
+    genome1.mutator(Mutator);
+
+    GAParameterList params;
+    GASteadyStateGA::registerDefaultParameters(params);
+    params.set(gaNnGenerations, 100);
+    params.set(gaNpopulationSize, 100);
+    params.set(gaNscoreFrequency, 10);
+    params.set(gaNflushFrequency, 50);
+    params.set(gaNpMutation, 0.2);
+    params.set(gaNpCrossover, 0.8);
+    params.set(gaNselectScores, (int)GAStatistics::AllScores);
+    params.parse(argc, argv, gaFalse);
+
+    GASteadyStateGA ga1(genome1);
+    ga1.maximize();
+
+//    GARouletteWheelSelector selector;
+//    GATournamentSelector selector;
+    GARankSelector selector;
+//    GAUniformSelector selector;
+    ga1.selector(selector);
+
+    GASigmaTruncationScaling scaling;             // nieujemnosc f. dostosowania
+    ga1.scaling(scaling);
+    ga1.parameters(params);
+    ga1.set(gaNscoreFilename, "bog1.dat");
+    cout << "\nrunning ga number 1 (alternate allele(0) and allele(3))..."<<endl;
+
+    ga1.initialize(seed);
+    while(!ga1.done()){
+        ga1.step();
+        cout << "actual best (" << populationCount <<"):\t" << ga1.statistics().bestIndividual() << endl;
+        populationCount++;
+        cout.flush();
+    }
+
+    cout << "the ga generated:\n" << ga1.statistics().bestIndividual() << endl;
+    genome1 = ga1.statistics().bestIndividual();
+    cout << "Best fitness: " << Objective(genome1) << endl;
+    cout << "Whole surface: " << getGenomeSurface(genome1) << endl;
     return 0;
+}
+
+float Objective(GAGenome& g) {
+    GARealGenome &genome = (GARealGenome &) g;
+    long overlapError = 0;
+    long exceedError = 0;
+    long surface = 0;
+    vector<coord> positions;
+    for (int i = 0; i < genome.length() - 1; i += 2) {
+        int posX = genome.gene(i);
+        int posY = genome.gene(i + 1);
+        int rotation = 0;
+        int number = i / 2;
+        coord board = {posX, posY, rotation, number};
+        positions.push_back(board);
+    }
+
+    surface = calculateWholeSurface(positions);
+    overlapError = getOverlapError(positions);
+    exceedError = getExceedError(positions);
+
+    if (overlapError > 0 || exceedError > 0) {
+        return 0;
+    } else {
+        return surface;
+    }
+
+//    return surface - overlapError - exceedError;
+}
+
+int Mutator(GAGenome& g, float pmut) {
+    GARealGenome &genome = (GARealGenome &) g;
+
+    if (Objective(g) == 0 && populationCount >= 25) {
+        int excludedBoardNumber = 2 * GARandomInt(0, genome.size() / 2);   // position of board to change
+        genome.gene(excludedBoardNumber, -1);
+        genome.gene(excludedBoardNumber + 1, -1);
+    } else if (GAFlipCoin(1)) {
+        if (GAFlipCoin(1)) {
+            int numberToInclude = findExcludedBoard(genome);
+            findNewPositionForBoard(genome, numberToInclude);
+        }
+    }
+
+//    cout << genome << endl;
+    return (1);
+}
+
+int findExcludedBoard(GARealGenome& genome) {
+    vector<int> excluded = vector<int>();
+    for (int i = 0; i < genome.size() - 1; i += 2) {
+        if (genome.gene(i) == -1 || genome.gene(i + 1) == -1) {
+            excluded.push_back(i);
+        }
+    }
+    if (excluded.size() > 0) {
+        int numberOfExcluded = GARandomInt(0, excluded.size());
+        return excluded[numberOfExcluded - 1] / 2;
+    } else {
+        return -1;
+    }
+}
+
+void findNewPositionForBoard(GARealGenome& genome, int number) {
+    int upperRangeX = BOARD_WIDTH - smallBoards[number].x;
+    int upperRangeY = BOARD_HEIGHT - smallBoards[number].y;
+    if (upperRangeX < 0 || upperRangeY < 0 || number < 0) {
+        return;
+    }
+
+    genome.gene(2 * number, GARandomInt(0, upperRangeX));
+    genome.gene(2 *number + 1, GARandomInt(0, upperRangeY));
+}
+
+long getGenomeSurface(GAGenome& g) {
+    GARealGenome &genome = (GARealGenome &) g;
+
+    vector<coord> positions;
+    for (int i = 0; i < genome.length() - 1; i += 2) {
+        int posX = genome.gene(i);
+        int posY = genome.gene(i + 1);
+        int rotation = 0;
+        int number = i / 2;
+        coord board = {posX, posY, rotation, number};
+        positions.push_back(board);
+    }
+
+    return calculateWholeSurface(positions);
 }
