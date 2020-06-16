@@ -44,6 +44,9 @@ long getBoardSurface (coord* board);
 int findExcludedBoard(GARealGenome& genome);
 void findNewPositionForBoard(GARealGenome& genome, int number);
 long getGenomeSurface(GAGenome& g);
+int findExcludedBoardWithFocusOnTheBiggest(GARealGenome& genome);
+int getExcludedWithFocusOnTheBiggest(GARealGenome& genome, vector<int> excluded);
+int chooseFromIncluded(GARealGenome& genome);
 
 vector<coord> readBoards() {
     ifstream file("maleplyty.txt");
@@ -232,7 +235,7 @@ int main(int argc, char *argv[]) {
     }
 
     readBoards();
-    int length = smallBoards.size() * 2;
+    int length = smallBoards.size() * 3;
     GARealAlleleSet alleles1;
 
 for (int i = -1; i < 2800; i++) {
@@ -240,6 +243,9 @@ for (int i = -1; i < 2800; i++) {
 }
     GARealGenome genome1(length, alleles1, Objective);
 //    genome1.crossover(GARealGenome::OnePointCrossover);
+    genome1.crossover(GARealGenome::TwoPointCrossover);
+//    genome1.crossover(GARealGenome::UniformCrossover);
+//    genome1.crossover(GARealGenome::UniformCrossover);
     genome1.mutator(Mutator);
 
     GAParameterList params;
@@ -260,6 +266,9 @@ for (int i = -1; i < 2800; i++) {
 //    GATournamentSelector selector;
     GARankSelector selector;
 //    GAUniformSelector selector;
+//  GADSSelector selector;
+//  GASRSSelector selector;      // - chyba niezly
+
     ga1.selector(selector);
 
     GASigmaTruncationScaling scaling;             // nieujemnosc f. dostosowania
@@ -289,11 +298,11 @@ float Objective(GAGenome& g) {
     long exceedError = 0;
     long surface = 0;
     vector<coord> positions;
-    for (int i = 0; i < genome.length() - 1; i += 2) {
+    for (int i = 0; i < genome.length() - 2; i += 3) {
         int posX = genome.gene(i);
         int posY = genome.gene(i + 1);
-        int rotation = 0;
-        int number = i / 2;
+        int rotation = genome.gene(i + 2);
+        int number = i / 3;
         coord board = {posX, posY, rotation, number};
         positions.push_back(board);
     }
@@ -314,33 +323,135 @@ float Objective(GAGenome& g) {
 int Mutator(GAGenome& g, float pmut) {
     GARealGenome &genome = (GARealGenome &) g;
 
-    if (Objective(g) == 0 && populationCount >= 25) {
-        int excludedBoardNumber = 2 * GARandomInt(0, genome.size() / 2);   // position of board to change
-        genome.gene(excludedBoardNumber, -1);
-        genome.gene(excludedBoardNumber + 1, -1);
-    } else if (GAFlipCoin(1)) {
-        if (GAFlipCoin(1)) {
-            int numberToInclude = findExcludedBoard(genome);
-            findNewPositionForBoard(genome, numberToInclude);
+    if (populationCount == 0) {
+        for (int i = 0; i < genome.size(); i++) {
+            genome.gene(i, -1);
         }
     }
 
-//    cout << genome << endl;
+    if (populationCount < 25) {
+        int numberToInclude = findExcludedBoardWithFocusOnTheBiggest(genome);
+//        cout << "Number: " << numberToInclude << endl;
+        findNewPositionForBoard(genome, numberToInclude);
+    } else {
+        if (Objective(g) == 0) {
+            int rotationPos = 3 * chooseFromIncluded(genome) + 2;
+            if (rotationPos != -1) {
+                if (genome.gene(rotationPos) < 1) {
+                    genome.gene(rotationPos, 1);
+                } else {
+                    genome.gene(rotationPos, 0);
+                }
+            }
+
+            if (Objective(genome) == 0) {
+                int excludedBoardNumber = 3 * GARandomInt(0, genome.size() / 3);   // position of board to change   TODO
+                genome.gene(excludedBoardNumber, -1);
+                genome.gene(excludedBoardNumber + 1, -1);
+            }
+        } else if (GAFlipCoin(1)) {
+            if (GAFlipCoin(1)) {
+                int numberToInclude = findExcludedBoard(genome);
+                findNewPositionForBoard(genome, numberToInclude);
+            }
+        }
+    }
+
+
+//    if (GAFlipCoin(0.5)) {
+////        int rotationPos = 3 * GARandomInt(0, (genome.size() / 3) - 1) + 2;
+//        int rotationPos = 3 * chooseFromIncluded(genome) + 2;
+//        if (rotationPos != -1) {
+////            cout << "co sie kryje pop rotationPos: " << genome.gene(rotationPos) << endl;
+//            if (genome.gene(rotationPos) < 1) {
+//                genome.gene(rotationPos, 1);
+//            } else {
+//                genome.gene(rotationPos, 0);
+//            }
+//        }
+//    }
+
+//    for (int i = 2; i < genome.size() - 2; i += 3) {
+//        if (genome.gene(i) < 1) {
+//            genome.gene(i, 1);
+//        } else {
+//            genome.gene(i, 0);
+//        }
+//    }
+
     return (1);
+}
+
+int chooseFromIncluded(GARealGenome& genome) {
+    vector<int> included = vector<int>();
+    for (int i = 0; i < genome.size() - 2; i += 3) {
+        if (genome.gene(i) != -1 && genome.gene(i + 1) != -1) {
+            included.push_back(i);
+        }
+    }
+    if (!included.empty()) {
+        int numberOfIncluded = GARandomInt(0, included.size());
+        return included[numberOfIncluded - 1] / 3;
+    } else {
+        return -1;
+    }
 }
 
 int findExcludedBoard(GARealGenome& genome) {
     vector<int> excluded = vector<int>();
-    for (int i = 0; i < genome.size() - 1; i += 2) {
+    for (int i = 0; i < genome.size() - 2; i += 3) {
+        if (genome.gene(i) == -1 || genome.gene(i + 1) == -1) {
+            excluded.push_back(i);
+        }
+    }
+    if (!excluded.empty()) {
+        int numberOfExcluded = GARandomInt(0, excluded.size());
+        return excluded[numberOfExcluded - 1] / 3;
+    } else {
+        return -1;
+    }
+}
+
+int findExcludedBoardWithFocusOnTheBiggest(GARealGenome& genome) {
+    vector<int> excluded = vector<int>();
+    for (int i = 0; i < genome.size() - 2; i += 3) {
         if (genome.gene(i) == -1 || genome.gene(i + 1) == -1) {
             excluded.push_back(i);
         }
     }
     if (excluded.size() > 0) {
-        int numberOfExcluded = GARandomInt(0, excluded.size());
-        return excluded[numberOfExcluded - 1] / 2;
+        int numberOfExcluded = getExcludedWithFocusOnTheBiggest(genome, excluded);
+        return excluded[numberOfExcluded - 1] / 3;
     } else {
         return -1;
+    }
+}
+
+int getExcludedWithFocusOnTheBiggest(GARealGenome& genome, vector<int> excluded) {
+    float sum = 0;
+    for (int i = 0; i < excluded.size(); i++) {
+        int x = smallBoards[excluded[i]/3].x;
+        int y = smallBoards[excluded[i]/3].y;
+//        cout << "x: " << x << endl;
+//        cout << "y: " << y << endl;
+        sum += x * y;
+    }
+    float prob = GARandomFloat();
+    float probCounter = 0;
+    for (int i = 0; i < excluded.size(); i++) {
+        int x = smallBoards[excluded[i]/3].x;
+        int y = smallBoards[excluded[i]/3].y;
+//        cout << "x: " << x << endl;
+//        cout << "y: " << y << endl;
+//        cout << "liczone: " << x * y / sum << endl;
+//        cout << "prob: " << prob << endl;
+        probCounter += x * y / sum;
+        if (probCounter > prob) {
+//            cout << "Pole: " << x*y << endl;
+//            cout << "i: " << i << endl;
+            return i;
+//            return 7;
+        }
     }
 }
 
@@ -351,19 +462,19 @@ void findNewPositionForBoard(GARealGenome& genome, int number) {
         return;
     }
 
-    genome.gene(2 * number, GARandomInt(0, upperRangeX));
-    genome.gene(2 *number + 1, GARandomInt(0, upperRangeY));
+    genome.gene(3 * number, GARandomInt(0, upperRangeX));
+    genome.gene(3 *number + 1, GARandomInt(0, upperRangeY));
 }
 
 long getGenomeSurface(GAGenome& g) {
     GARealGenome &genome = (GARealGenome &) g;
 
     vector<coord> positions;
-    for (int i = 0; i < genome.length() - 1; i += 2) {
+    for (int i = 0; i < genome.length() - 2; i += 3) {
         int posX = genome.gene(i);
         int posY = genome.gene(i + 1);
-        int rotation = 0;
-        int number = i / 2;
+        int rotation = genome.gene(i + 2);
+        int number = i / 3;
         coord board = {posX, posY, rotation, number};
         positions.push_back(board);
     }
