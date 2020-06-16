@@ -352,7 +352,9 @@ int Mutator(GAGenome& g, float pmut) {
         } else if (GAFlipCoin(1)) {
             if (GAFlipCoin(1)) {
                 int numberToInclude = findExcludedBoard(genome);
-                findNewPositionForBoard(genome, numberToInclude);
+                if (numberToInclude != -1) {
+                    findNewPositionForBoard(genome, numberToInclude);
+                }
             }
         }
     }
@@ -456,8 +458,9 @@ int getExcludedWithFocusOnTheBiggest(GARealGenome& genome, vector<int> excluded)
 }
 
 void findNewPositionForBoard(GARealGenome& genome, int number) {
-    int upperRangeX = BOARD_WIDTH - smallBoards[number].x;
-    int upperRangeY = BOARD_HEIGHT - smallBoards[number].y;
+    coord boardPosition = {(int)genome.gene(number), (int)genome.gene(number + 1), (int)genome.gene(number + 2), number};
+    int upperRangeX = BOARD_WIDTH - getBoardWidth(&boardPosition);
+    int upperRangeY = BOARD_HEIGHT - getBoardHeight(&boardPosition);
     if (upperRangeX < 0 || upperRangeY < 0 || number < 0) {
         return;
     }
