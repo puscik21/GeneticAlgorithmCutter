@@ -73,7 +73,7 @@
       <workItem from="1591971557189" duration="6336000" />
       <workItem from="1592130799262" duration="69517000" />
       <workItem from="1592293371960" duration="1019000" />
-      <workItem from="1592317046056" duration="2688000" />
+      <workItem from="1592317046056" duration="10029000" />
     </task>
     <task id="LOCAL-00001" summary="Method of checking overlapping between 2 boards">
       <created>1592002694437</created>
@@ -103,7 +103,14 @@
       <option name="project" value="LOCAL" />
       <updated>1592293469392</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Added finding new position based on rotation">
+      <created>1592323272408</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1592323272408</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -124,7 +131,8 @@
     <MESSAGE value="Method of checking exceedError" />
     <MESSAGE value="Mutations are working" />
     <MESSAGE value="Some backup" />
-    <option name="LAST_COMMIT_MESSAGE" value="Some backup" />
+    <MESSAGE value="Added finding new position based on rotation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added finding new position based on rotation" />
   </component>
   <component name="WindowStateProjectService">
     <state x="-1397" y="215" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1592002417806">
@@ -135,10 +143,10 @@
       <screen x="-1920" y="0" width="1536" height="824" />
     </state>
     <state x="-1310" y="231" key="#xdebugger.evaluate/0.0.1536.824/-1920.0.1536.824@-1920.0.1536.824" timestamp="1591996985373" />
-    <state x="484" y="9" key="CommitChangelistDialog2" timestamp="1592293467221">
-      <screen x="0" y="0" width="1920" height="1040" />
+    <state x="-1533" y="7" key="CommitChangelistDialog2" timestamp="1592323270083">
+      <screen x="-1920" y="0" width="1536" height="824" />
     </state>
-    <state x="-1533" y="7" key="CommitChangelistDialog2/0.0.1536.824/-1920.0.1536.824@-1920.0.1536.824" timestamp="1592260349273" />
+    <state x="-1533" y="7" key="CommitChangelistDialog2/0.0.1536.824/-1920.0.1536.824@-1920.0.1536.824" timestamp="1592323270083" />
     <state x="484" y="9" key="CommitChangelistDialog2/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1592293467221" />
     <state x="-1827" y="93" width="1350" height="638" key="DiffContextDialog" timestamp="1592259745469">
       <screen x="-1920" y="0" width="1536" height="824" />
@@ -180,10 +188,10 @@
       <screen x="-1920" y="0" width="1536" height="824" />
     </state>
     <state width="1493" height="158" key="GridCell.Tab.1.right/0.0.1536.824/-1920.0.1536.824@-1920.0.1536.824" timestamp="1592273121001" />
-    <state x="541" y="170" key="Vcs.Push.Dialog.v2" timestamp="1592296025554">
-      <screen x="0" y="0" width="1920" height="1040" />
+    <state x="-1487" y="135" key="Vcs.Push.Dialog.v2" timestamp="1592323278760">
+      <screen x="-1920" y="0" width="1536" height="824" />
     </state>
-    <state x="-1487" y="135" key="Vcs.Push.Dialog.v2/0.0.1536.824/-1920.0.1536.824@-1920.0.1536.824" timestamp="1592141602986" />
+    <state x="-1487" y="135" key="Vcs.Push.Dialog.v2/0.0.1536.824/-1920.0.1536.824@-1920.0.1536.824" timestamp="1592323278760" />
     <state x="541" y="170" key="Vcs.Push.Dialog.v2/0.0.1920.1040/-1920.0.1920.1040@0.0.1920.1040" timestamp="1592296025554" />
     <state x="465" y="236" key="com.intellij.ide.util.TipDialog" timestamp="1592320781410">
       <screen x="0" y="0" width="1536" height="824" />
